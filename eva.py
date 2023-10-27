@@ -75,6 +75,14 @@ class Eva:
             if self.eval(condition):
                 return self.eval(consequent, env)
             return  self.eval(alternate, env)
+        
+        # -------------------------------
+        # while-expression
+        if exp[0] == 'while':
+            _tag, condition, body = exp
+            while self.eval(condition, env):
+                result = self.eval(body, env)
+            return result
 
         raise Exception('Unimplemented')
 
@@ -99,6 +107,7 @@ def run_tests():
     from tests import variable_test
     from tests import block_test
     from tests import if_test
+    from tests import while_test
 
     # Initialize the environment and Eva instance
     env = Environment({
@@ -113,7 +122,7 @@ def run_tests():
     # List of tests
     tests = [
              self_eval_test.test_module, math_test.test_module, variable_test.test_module, 
-             block_test.test_module, if_test.test_module
+             block_test.test_module, if_test.test_module, while_test.test_module,
             ]
 
     # Execute each test
