@@ -22,27 +22,28 @@ class Eva:
         # -------------------------------
         # Math operations:
         if exp[0] == '+':
-            return self.eval(exp[1]) + self.eval(exp[2])
+            return self.eval(exp[1], env) + self.eval(exp[2], env)
         
         if exp[0] == '*':
-            return self.eval(exp[1]) * self.eval(exp[2])
+            return self.eval(exp[1], env) * self.eval(exp[2], env)
         
         # -------------------------------
         # Block: sequence of expressions:
         if exp[0] == 'begin':
             block_env = Environment()
-            return self._eval_block(exp, env)
+            block_env.parent = env
+            return self._eval_block(exp, block_env)
 
         # -------------------------------
-        # Variable declaration:
+        # Variable declaration: (var foo 10)
         if exp[0] == 'var':
             _, name, value = exp
-            return env.define(name, self.eval(value))
+            return env.define(name, self.eval(value, env))
         
         # -------------------------------
-        # Variable access:
+        # Variable access: foo
         if self._is_variable_name(exp):
-            return self.env.lookup(exp)
+            return env.lookup(exp)
 
         raise Exception('Unimplemented')
 
@@ -71,6 +72,7 @@ eva = Eva(Environment({
     }))
 
 # Math:
+"""
 assert eva.eval(1) == 1
 assert eva.eval('"hello"') == 'hello'
 assert eva.eval(['+', 1, 5]) == 6
@@ -114,7 +116,22 @@ assert eva.eval(
         'x',
 
     ]) == 10
+"""
+assert eva.eval(
+    ['begin',
+        ['var', 'value', 10],
+        ['var', 'result',
 
+            ['begin',
+                ['var', 'x', ['+', 'value', 10]],
+                'x'
+            ]
+        
+        ],
+
+        'result',
+
+    ]) == 20
 
 
 print('All assertions passed!')
