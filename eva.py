@@ -28,6 +28,23 @@ class Eva:
             return self.eval(exp[1], env) * self.eval(exp[2], env)
         
         # -------------------------------
+        # Comparison operators:
+        if exp[0] == '>':
+            return self.eval(exp[1], env) > self.eval(exp[2], env)
+        
+        if exp[0] == '>=':
+            return self.eval(exp[1], env) >= self.eval(exp[2], env)
+        
+        if exp[0] == '<':
+            return self.eval(exp[1], env) < self.eval(exp[2], env)
+        
+        if exp[0] == '<=':
+            return self.eval(exp[1], env) <= self.eval(exp[2], env)
+        
+        if exp[0] == '=':
+            return self.eval(exp[1], env) == self.eval(exp[2], env)
+        
+        # -------------------------------
         # Block: sequence of expressions:
         if exp[0] == 'begin':
             block_env = Environment()
@@ -50,6 +67,14 @@ class Eva:
         # Variable access: foo
         if self._is_variable_name(exp):
             return env.lookup(exp)
+        
+        # -------------------------------
+        # if-expression
+        if exp[0] == 'if':
+            _tag, condition, conseqeunt, alternate = exp
+            if self.eval(condition):
+                return self.eval(consequent, env)
+            return  self.eval(alternate, env)
 
         raise Exception('Unimplemented')
 
@@ -73,6 +98,7 @@ def run_tests():
     from tests import math_test
     from tests import variable_test
     from tests import block_test
+    from tests import if_test
 
     # Initialize the environment and Eva instance
     env = Environment({
@@ -85,7 +111,10 @@ def run_tests():
     eva = Eva(env)
 
     # List of tests
-    tests = [self_eval_test.test_module, math_test.test_module, variable_test.test_module, block_test.test_module]
+    tests = [
+             self_eval_test.test_module, math_test.test_module, variable_test.test_module, 
+             block_test.test_module, if_test.test_module
+            ]
 
     # Execute each test
     for test_function in tests:
