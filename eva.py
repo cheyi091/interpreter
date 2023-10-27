@@ -68,88 +68,31 @@ class Eva:
             result = self.eval(exp, env)
         return result
 
+def run_tests():
+    from tests import self_eval_test
+    from tests import math_test
+    from tests import variable_test
+    from tests import block_test
 
-# Tests:
-eva = Eva(Environment({
-    'null': None,
-    'true': True,
-    'false': False,
-    'VERSION': '0.1',
-    }))
+    # Initialize the environment and Eva instance
+    env = Environment({
+        "null": None,
+        "true": True,
+        "false": False,
+        "VERSION": "0.1"
+    })
 
-# Math:
-assert eva.eval(1) == 1
-assert eva.eval('"hello"') == 'hello'
-assert eva.eval(['+', 1, 5]) == 6
-assert eva.eval(['+', ['+', 3, 2], 5]) == 10
-assert eva.eval(['+', ['*', 3, 2], 5]) == 11
+    eva = Eva(env)
 
-# Variables:
-assert eva.eval(['var', 'x', 10]) == 10
-assert eva.eval('x') == 10
+    # List of tests
+    tests = [self_eval_test.test_module, math_test.test_module, variable_test.test_module, block_test.test_module]
 
-assert eva.eval(['var', 'y', 100]) == 100
-assert eva.eval('y') == 100
+    # Execute each test
+    for test_function in tests:
+        test_function(eva)
 
-assert eva.eval('VERSION') == '0.1'
-
-assert eva.eval(['var', 'isUser', 'true']) == True
-
-assert eva.eval(['var', 'z', ['*', 2, 2]]) == 4
-assert eva.eval('z') == 4
-
-# Blocks
-assert eva.eval(
-    ['begin',
-        ['var', 'x', 10],
-        ['var', 'y', 20],
-
-        ['+', ['*', 'x', 'y'], 30],
-
-    ]) == 230
-
-assert eva.eval(
-    ['begin',
-        ['var', 'x', 10],
-        
-        ['begin',
-            ['var', 'x', 20],
-            'x'
-        
-        ],
-
-        'x',
-
-    ]) == 10
-
-assert eva.eval(
-    ['begin',
-        ['var', 'value', 10],
-        ['var', 'result',
-
-            ['begin',
-                ['var', 'x', ['+', 'value', 10]],
-                'x'
-            ]
-        
-        ],
-
-        'result',
-
-    ]) == 20
-
-assert eva.eval(
-    ['begin',
-        ['var', 'data', 10],
-        
-        ['begin',
-            ['set', 'data', 100],
-
-        ],
-
-        'data'
-        
-    ]) == 100
+    print("All assertions passed!")
 
 
-print('All assertions passed!')
+if __name__ == '__main__':
+    run_tests()
