@@ -41,6 +41,12 @@ class Eva:
             return env.define(name, self.eval(value, env))
         
         # -------------------------------
+        # Variable update: (set foo 10)
+        if exp[0] == 'set':
+            _, name, value = exp
+            return env.assign(name, self.eval(value, env))
+        
+        # -------------------------------
         # Variable access: foo
         if self._is_variable_name(exp):
             return env.lookup(exp)
@@ -72,7 +78,6 @@ eva = Eva(Environment({
     }))
 
 # Math:
-"""
 assert eva.eval(1) == 1
 assert eva.eval('"hello"') == 'hello'
 assert eva.eval(['+', 1, 5]) == 6
@@ -116,7 +121,7 @@ assert eva.eval(
         'x',
 
     ]) == 10
-"""
+
 assert eva.eval(
     ['begin',
         ['var', 'value', 10],
@@ -132,6 +137,19 @@ assert eva.eval(
         'result',
 
     ]) == 20
+
+assert eva.eval(
+    ['begin',
+        ['var', 'data', 10],
+        
+        ['begin',
+            ['set', 'data', 100],
+
+        ],
+
+        'data'
+        
+    ]) == 100
 
 
 print('All assertions passed!')

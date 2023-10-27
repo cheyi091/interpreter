@@ -12,6 +12,13 @@ class Environment:
         self.record[name] = value
         return value
 
+    def assign(self, name, value):
+        """
+        Updates an existing variable.
+        """
+        self.resolve(name).record[name] = value
+        return value
+
     def lookup(self, name):
         """
         Returns the value of a defined variable, or throws
