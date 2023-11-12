@@ -1,16 +1,19 @@
 import re
 from env import Environment
+from transformer import Transformer
 
 class Eva:
     def __init__(self, env=None):
         if env is None:
             env = Environment()
         self.env = env
+        self._transformer = Transformer()
 
     def eval(self, exp, env=None):
+        
         if env is None:
             env = self.env
-
+        
         # -------------------------------
         # Self-evaluating expressions:
         if self._is_number(exp):
@@ -45,8 +48,8 @@ class Eva:
         # -------------------------------
         # if-expression
         if exp[0] == 'if':
-            _tag, condition, conseqeunt, alternate = exp
-            if self.eval(condition):
+            _tag, condition, consequent, alternate = exp
+            if self.eval(condition, env):
                 return self.eval(consequent, env)
             return  self.eval(alternate, env)
         
@@ -66,10 +69,10 @@ class Eva:
             _tag, name, params, body = exp
 
             # JIT-transpile to a variable declaration
-            var_exp = ['var', name, ['lambda', params, body]]
+            var_exp = self._transformer.transform_def_to_var_lambda(exp)
 
             return self.eval(var_exp, env)
-
+            
         # -------------------------------
         # Lambda function: (lambda (x) (* x x))
         if exp[0] == 'lambda':
@@ -88,6 +91,7 @@ class Eva:
         # (+ x 5)
         # (> foo bar)
         if isinstance(exp, list):
+
             fn = self.eval(exp[0], env)
 
             args = [self.eval(arg, env) for arg in exp[1:]]  # Equivalent to map(this.eval, arg, env)
