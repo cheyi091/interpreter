@@ -60,16 +60,26 @@ class Eva:
 
         # -------------------------------
         # Function declaration: (def square (x) (* x x))
+        #
+        # Syntatic sugar for: (var square (lambda (x) (* x x)))
         if exp[0] == 'def':
             _tag, name, params, body = exp
 
-            fn = {
+            # JIT-transpile to a variable declaration
+            var_exp = ['var', name, ['lambda', params, body]]
+
+            return self.eval(var_exp, env)
+
+        # -------------------------------
+        # Lambda function: (lambda (x) (* x x))
+        if exp[0] == 'lambda':
+            _tag, params, body = exp
+
+            return {
                 'params': params,
                 'body': body,
                 'env': env,
             }
-
-            return env.define(name, fn)
 
         # -------------------------------
         # Function calls:
@@ -130,6 +140,7 @@ def run_tests(env):
     from tests import while_test
     from tests import built_in_function_test
     from tests import user_defined_function_test
+    from tests import lambda_function_test
 
     eva = Eva(env)
 
@@ -143,6 +154,7 @@ def run_tests(env):
              while_test.test_module,
              built_in_function_test.test_module,
              user_defined_function_test.test_module,
+             lambda_function_test.test_module,
             ]
 
     # Execute each test
