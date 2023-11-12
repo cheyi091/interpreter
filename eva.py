@@ -72,6 +72,15 @@ class Eva:
             var_exp = self._transformer.transform_def_to_var_lambda(exp)
 
             return self.eval(var_exp, env)
+        
+        # -------------------------------
+        # Switch-expression (switch (cond1, block1) ...)
+        #
+        # Syntatic sugar for nested if-expressions
+        if exp[0] == 'switch':
+            if_exp = self._transformer.transform_from_switch_to_if(exp)
+
+            return self.eval(if_exp, env)
             
         # -------------------------------
         # Lambda function: (lambda (x) (* x x))
@@ -83,6 +92,69 @@ class Eva:
                 'body': body,
                 'env': env,
             }
+        
+        # -------------------------------
+        # For-loop: (for init condition modifier body)
+        #
+        # Syntatic sugar for: (begin init (while condition (begin body modifier)))
+        if exp[0] == 'for':
+            while_exp = self._transformer.transform_from_for_to_while(exp)
+
+            return self.eval(while_exp, env)
+        
+        # -------------------------------
+        # Increment: (++ foo)
+        #
+        # Syntatic sugar for: (set foo (+ foo 1))
+        if exp[0] == '++':
+            set_exp = self._transformer.transform_from_inc_to_set(exp)
+
+            return self.eval(set_exp, env)
+        
+        # -------------------------------
+        # Increment: (-- foo)
+        #
+        # Syntatic sugar for: (set foo (- foo 1))
+        if exp[0] == '--':
+            set_exp = self._transformer.transform_from_dec_to_set(exp)
+
+            return self.eval(set_exp, env)
+        
+        # -------------------------------
+        # Increment: (+= foo val)
+        #
+        # Syntatic sugar for: (set foo (+ foo val))
+        if exp[0] == '+=':
+            set_exp = self._transformer.transform_from_inc_val_to_set(exp)
+
+            return self.eval(set_exp, env)
+        
+        # -------------------------------
+        # Increment: (-= foo val)
+        #
+        # Syntatic sugar for: (set foo (- foo val))
+        if exp[0] == '-=':
+            set_exp = self._transformer.transform_from_dec_val_to_set(exp)
+
+            return self.eval(set_exp, env)
+        
+        # -------------------------------
+        # Increment: (*= foo val)
+        #
+        # Syntatic sugar for: (set foo (* foo val))
+        if exp[0] == '*=':
+            set_exp = self._transformer.transform_from_mul_val_to_set(exp)
+
+            return self.eval(set_exp, env)
+        
+        # -------------------------------
+        # Increment: (/= foo val)
+        #
+        # Syntatic sugar for: (set foo (/ foo val))
+        if exp[0] == '/=':
+            set_exp = self._transformer.transform_from_div_val_to_set(exp)
+
+            return self.eval(set_exp, env)
 
         # -------------------------------
         # Function calls:
@@ -145,6 +217,9 @@ def run_tests(env):
     from tests import built_in_function_test
     from tests import user_defined_function_test
     from tests import lambda_function_test
+    from tests import switch_test
+    from tests import for_test
+    from tests import assignment_operator_test
 
     eva = Eva(env)
 
@@ -159,6 +234,9 @@ def run_tests(env):
              built_in_function_test.test_module,
              user_defined_function_test.test_module,
              lambda_function_test.test_module,
+             switch_test.test_module,
+             for_test.test_module,
+             assignment_operator_test.test_module,
             ]
 
     # Execute each test
