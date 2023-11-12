@@ -1,9 +1,9 @@
 class Environment:
-    def __init__(self, record=None):
+    def __init__(self, record=None, parent=None):
         if record is None:
             record = {}
         self.record = record
-        self.parent = None
+        self.parent = parent
 
     def define(self, name, value):
         """

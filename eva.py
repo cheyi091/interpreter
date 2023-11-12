@@ -18,37 +18,11 @@ class Eva:
         
         if self._is_string(exp):
             return exp[1:-1]
-
-        # -------------------------------
-        # Math operations:
-        if exp[0] == '+':
-            return self.eval(exp[1], env) + self.eval(exp[2], env)
-        
-        if exp[0] == '*':
-            return self.eval(exp[1], env) * self.eval(exp[2], env)
-        
-        # -------------------------------
-        # Comparison operators:
-        if exp[0] == '>':
-            return self.eval(exp[1], env) > self.eval(exp[2], env)
-        
-        if exp[0] == '>=':
-            return self.eval(exp[1], env) >= self.eval(exp[2], env)
-        
-        if exp[0] == '<':
-            return self.eval(exp[1], env) < self.eval(exp[2], env)
-        
-        if exp[0] == '<=':
-            return self.eval(exp[1], env) <= self.eval(exp[2], env)
-        
-        if exp[0] == '=':
-            return self.eval(exp[1], env) == self.eval(exp[2], env)
         
         # -------------------------------
         # Block: sequence of expressions:
         if exp[0] == 'begin':
-            block_env = Environment()
-            block_env.parent = env
+            block_env = Environment(parent=env)
             return self._eval_block(exp, block_env)
 
         # -------------------------------
@@ -84,6 +58,22 @@ class Eva:
                 result = self.eval(body, env)
             return result
 
+        # -------------------------------
+        # Function calls:
+        #
+        # (print "Hello World")
+        # (+ x 5)
+        # (> foo bar)
+        if isinstance(exp, list):
+            fn = self.eval(exp[0], env)
+
+            args = [self.eval(arg, env) for arg in exp[1:]]  # Equivalent to map(this.eval, arg, env)
+
+            if callable(fn):
+                return fn(*args)
+
+
+
         raise Exception('Unimplemented')
 
     def _is_number(self, exp):
@@ -93,7 +83,8 @@ class Eva:
         return isinstance(exp, str) and exp.startswith('"') and exp.endswith('"')
     
     def _is_variable_name(self, exp):
-        return isinstance(exp, str) and re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', exp) is not None
+        #return isinstance(exp, str) and re.match(r'^[+*/\-=<>a-zA-Z][a-zA-Z0-9_]*$', exp) is not None
+        return isinstance(exp, str) and re.match(r'^[+*/\-=<>a-zA-Z0-9_]*$', exp) is not None
 
     def _eval_block(self, block, env):
         _tag, *expressions = block
@@ -101,36 +92,62 @@ class Eva:
             result = self.eval(exp, env)
         return result
 
-def run_tests():
+
+def run_tests(env):
     from tests import self_eval_test
     from tests import math_test
     from tests import variable_test
     from tests import block_test
     from tests import if_test
     from tests import while_test
-
-    # Initialize the environment and Eva instance
-    env = Environment({
-        "null": None,
-        "true": True,
-        "false": False,
-        "VERSION": "0.1"
-    })
+    from tests import built_in_function_test
 
     eva = Eva(env)
 
     # List of tests
     tests = [
-             self_eval_test.test_module, math_test.test_module, variable_test.test_module, 
-             block_test.test_module, if_test.test_module, while_test.test_module,
+             self_eval_test.test_module, 
+             math_test.test_module, 
+             variable_test.test_module, 
+             block_test.test_module, 
+             if_test.test_module, 
+             while_test.test_module,
+             built_in_function_test.test_module,
             ]
 
     # Execute each test
     for test_function in tests:
         test_function(eva)
 
+    eva.eval(['print', '"Hello"', '"World"'])
+
     print("All assertions passed!")
 
 
 if __name__ == '__main__':
-    run_tests()
+    env = Environment({
+        'null': None,
+
+        'true': True,
+        'false': False,
+        
+        'VERSION': '0.1',
+            
+        # Operators
+        '+': lambda op1, op2: op1 + op2,
+        '*': lambda op1, op2: op1 * op2,
+        '-': lambda op1, op2=None: -op1 if op2 is None else op1 - op2,
+        '/': lambda op1, op2: op1 / op2,
+        
+        # Comparison
+        '>': lambda op1, op2: op1 > op2,
+        '>=': lambda op1, op2: op1 >= op2,
+        '<': lambda op1, op2: op1 < op2,
+        '<=': lambda op1, op2: op1 <= op2,
+        '=': lambda op1, op2: op1 == op2,
+
+        'print': lambda *args: print(*args),
+
+    })
+
+    run_tests(env)
