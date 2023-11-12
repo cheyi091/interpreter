@@ -59,6 +59,19 @@ class Eva:
             return result
 
         # -------------------------------
+        # Function declaration: (def square (x) (* x x))
+        if exp[0] == 'def':
+            _tag, name, params, body = exp
+
+            fn = {
+                'params': params,
+                'body': body,
+                'env': env,
+            }
+
+            return env.define(name, fn)
+
+        # -------------------------------
         # Function calls:
         #
         # (print "Hello World")
@@ -69,13 +82,34 @@ class Eva:
 
             args = [self.eval(arg, env) for arg in exp[1:]]  # Equivalent to map(this.eval, arg, env)
 
+            # Native function
             if callable(fn):
                 return fn(*args)
+            
+            # User-defined function
+            activation_record = {}
+            for index, param in enumerate(fn['params']):
+                activation_record[param] = args[index]
+            
+            activation_env = Environment(activation_record, fn['env'])
+
+            return self._eval_body(fn['body'], activation_env)
 
 
 
         raise Exception('Unimplemented')
 
+    def _eval_body(self, body, env):
+        if body[0] == 'begin':
+            return self._eval_block(body, env)
+        return self.eval(body, env)
+
+    def _eval_block(self, block, env):
+        _tag, *expressions = block
+        for exp in expressions:
+            result = self.eval(exp, env)
+        return result
+    
     def _is_number(self, exp):
         return isinstance(exp, (int, float))
 
@@ -86,12 +120,6 @@ class Eva:
         #return isinstance(exp, str) and re.match(r'^[+*/\-=<>a-zA-Z][a-zA-Z0-9_]*$', exp) is not None
         return isinstance(exp, str) and re.match(r'^[+*/\-=<>a-zA-Z0-9_]*$', exp) is not None
 
-    def _eval_block(self, block, env):
-        _tag, *expressions = block
-        for exp in expressions:
-            result = self.eval(exp, env)
-        return result
-
 
 def run_tests(env):
     from tests import self_eval_test
@@ -101,6 +129,7 @@ def run_tests(env):
     from tests import if_test
     from tests import while_test
     from tests import built_in_function_test
+    from tests import user_defined_function_test
 
     eva = Eva(env)
 
@@ -113,6 +142,7 @@ def run_tests(env):
              if_test.test_module, 
              while_test.test_module,
              built_in_function_test.test_module,
+             user_defined_function_test.test_module,
             ]
 
     # Execute each test
