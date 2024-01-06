@@ -37,8 +37,20 @@ class Eva:
         # -------------------------------
         # Variable update: (set foo 10)
         if exp[0] == 'set':
-            _, name, value = exp
-            return env.assign(name, self.eval(value, env))
+            _, ref, value = exp
+            
+            # Assignment to a property
+            if ref[0] == 'prop':
+                _tag, instance, prop_name = ref
+                instance_env = self.eval(instance, env)
+
+                return instance_env.define(
+                        prop_name,
+                        self.eval(value, env)
+                        )
+
+            # Simple assignment
+            return env.assign(ref, self.eval(value, env))
         
         # -------------------------------
         # Variable access: foo
@@ -155,7 +167,50 @@ class Eva:
             set_exp = self._transformer.transform_from_div_val_to_set(exp)
 
             return self.eval(set_exp, env)
+        
+        # -------------------------------
+        # Class declaration: (class <Name> <Parent> <Body>)
+        if exp[0] == 'class':
+            _tag, name, parent, body = exp
 
+            # A class is an environment -- a storage of methods and shared properties
+            parent_env = self.eval(parent, env) or env
+            class_env = Environment(None, parent_env)
+            
+            # Body is evaluated in the class environment
+            self._eval_body(body, class_env)
+            
+            # Class is accessible by name
+            return env.define(name, class_env)
+
+        # -------------------------------
+        # Class instantiation: (new <Class> <Arguments>...)
+        if exp[0] == 'new':
+            class_env = self.eval(exp[1], env);
+
+            # An instance of a class is an environment
+            # The parent component of the instance environment is set to its class
+            instance_env = Environment(None, class_env)
+
+            args = [self.eval(arg, env) for arg in exp[2:]]
+
+            self._call_user_defined_function(
+                class_env.lookup('constructor'),
+                [instance_env, *args]
+                )
+
+            return instance_env
+        
+        # -------------------------------
+        # Property access: (prop <instance> <name>
+        if exp[0] == 'prop':
+            _tag, instance, name = exp
+
+            instance_env = self.eval(instance, env)
+
+            return instance_env.lookup(name)
+
+        
         # -------------------------------
         # Function calls:
         #
@@ -173,17 +228,19 @@ class Eva:
                 return fn(*args)
             
             # User-defined function
-            activation_record = {}
-            for index, param in enumerate(fn['params']):
-                activation_record[param] = args[index]
-            
-            activation_env = Environment(activation_record, fn['env'])
-
-            return self._eval_body(fn['body'], activation_env)
-
+            return self._call_user_defined_function(fn, args)
 
 
         raise Exception('Unimplemented')
+    
+    def _call_user_defined_function(self, fn, args):
+        activation_record = {}
+        for index, param in enumerate(fn['params']):
+            activation_record[param] = args[index]
+        
+        activation_env = Environment(activation_record, fn['env'])
+
+        return self._eval_body(fn['body'], activation_env)
 
     def _eval_body(self, body, env):
         if body[0] == 'begin':
@@ -220,6 +277,7 @@ def run_tests(env):
     from tests import switch_test
     from tests import for_test
     from tests import assignment_operator_test
+    from tests import class_test
 
     eva = Eva(env)
 
@@ -237,6 +295,7 @@ def run_tests(env):
              switch_test.test_module,
              for_test.test_module,
              assignment_operator_test.test_module,
+             class_test.test_module,
             ]
 
     # Execute each test
