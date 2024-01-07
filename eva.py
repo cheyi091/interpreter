@@ -193,7 +193,7 @@ class Eva:
             instance_env = Environment(None, class_env)
 
             args = [self.eval(arg, env) for arg in exp[2:]]
-
+            
             self._call_user_defined_function(
                 class_env.lookup('constructor'),
                 [instance_env, *args]
@@ -237,7 +237,7 @@ class Eva:
         activation_record = {}
         for index, param in enumerate(fn['params']):
             activation_record[param] = args[index]
-        
+
         activation_env = Environment(activation_record, fn['env'])
 
         return self._eval_body(fn['body'], activation_env)

@@ -31,6 +31,7 @@ class Environment:
         Returns specific environment in which a variable is defined, or
         throws if a variable is not defined
         """
+        #print(f'name: {name}')
         if name in self.record:
             return self
         if self.parent is None:
